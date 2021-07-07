@@ -1,70 +1,105 @@
 # libfacedetection
 
-This is a binary library for face detection and face landmark detection in images. 
-The 32-bit and 64-bit dll files are provided.
-To achieve better performance, the 64-bit dll is recommended.
+This is an open source library for CNN-based face detection in images. The CNN model has been converted to static variables in C source files. The source code does not depend on any other libraries. What you need is just a C++ compiler. You can compile the source code under Windows, Linux, ARM and any platform with a C++ compiler.
 
-examples/libfacedetect-example.cpp shows how to use the library.
+SIMD instructions are used to speed up the detection. You can enable AVX2 if you use Intel CPU or NEON for ARM.
 
-![Examples](/images/chloecalmon.png "Detection example")
+The model file has also been provided in directory ./models/.
 
+examples/detect-image.cpp and examples/detect-camera.cpp show how to use the library.
 
-Comparison on Windows
--------------
+The library was trained by [libfacedetection.train](https://github.com/ShiqiYu/libfacedetection.train).
 
-| Method             | Time        | FPS         |Time         | FPS         |Time         | FPS        | Misc   |
-|--------------------|-------------|-------------|-------------|-------------|-------------|------------|--------|
-|                    | Win32       |  Win32      |   X64       |  X64        |  X64        |X64         |        |
-|                    |Single-thread|Single-thread|Single-thread|Single-thread|Multi-thread |Multi-thread|        |
-|OpenCV              |  --         | --          | --          | --          | 12.33ms     |     81.1   | Yaw angle: -60 to 60 degrees|
-|frontal             |  2.92ms     | 342.5       | 2.41ms      | 414.9       | 0.652ms     | 1533.1     | Yaw angle: -60 to 60 degrees|
-|frontal-surveillance|  3.83ms     | 261.1       | 3.37ms      | 269.7       | 0.944ms     | 1059.8     | Yaw angle: -70 to 70 degrees |
-|multiview           |  7.12ms     | 140.4       | 5.81ms      | 172.1       | 1.597ms     |  626.4     | Yaw angle: -90 to 90 degrees |
-|multiview_reinforce | 10.95ms     |  91.3       | 9.15ms      | 109.3       | 2.725ms     |  367.0     | Yaw angle: -90 to 90 degrees |
+![Examples](/images/cnnresult.png "Detection example")
 
-* Face detection only, and no landmark detection included.
-* 640x480 image size (VGA), scale=1.2, minimal window size = 48.
-* Intel(R) Core(TM) i7-4770 CPU @ 3.4GHz.
-* OpenCV classifier file: haarcascade_frontalface_alt.xml
+## How to use the code
 
-Comparison on ARM
--------------
+You can copy the files in directory src/ into your project,
+and compile them as the other files in your project.
+The source code is written in standard C/C++.
+It should be compiled at any platform which supports C/C++.
 
-| Method             | Time   | FPS  | Misc   |
-|--------------------|--------|------|--------|
-|frontal             |  12.5ms| 80.0 | Yaw angle: -60 to 60 degrees|
-|frontal-surveillance|  15.7ms| 63.7 | Yaw angle: -70 to 70 degrees |
-|multiview           |  27.8ms| 36.0 | Yaw angle: -90 to 90 degrees |
-|multiview_reinforce |  38.4ms| 26.0 | Yaw angle: -90 to 90 degrees |
+Some tips:
 
-* Face detection only, and no landmark detection included.
-* 640x480 image size (VGA), scale=1.2, minimal window size = 48
-* NVIDIA TK1 "4-Plus-1" 2.32GHz ARM quad-core Cortex-A15 CPU
-* Multi-core parallelization is disabled.
-* C programming language, and no SIMD instruction is used.
+  * Please add facedetection_export.h file in the position where you copy your facedetectcnn.h files, add #define FACEDETECTION_EXPORT to  facedetection_export.h file. See: [issues #222](https://github.com/ShiqiYu/libfacedetection/issues/222)
+  * Please add -O3 to turn on optimizations when you compile the source code using g++.
+  * Please choose 'Maximize Speed/-O2' when you compile the source code using Microsoft Visual Studio.
+  * You can enable OpenMP to speedup. But the best solution is to call the detection function in different threads.
 
-The dll cannot run on ARM. The library should be recompiled from source code for ARM compatibility. If you need the source code, a commercial license is needed.
+You can also compile the source code to a static or dynamic library, and then use it in your project.
 
-Evaluation
--------------
-FDDB: http://vis-www.cs.umass.edu/fddb/index.html
-
-![Evaluation on FDDB](https://github.com/ShiqiYu/libfacedetection/blob/master/FDDB-results-of-4functions.png "Evaluation on FDDB")
-
-* scale=1.08
-* minimal window size = 16
-* the heights of the face rectangles are scaled to 1.2 to fit the ground truth data in FDDB.
+[How to compile](COMPILE.md)
 
 
-Author
--------------
+## CNN-based Face Detection on Intel CPU
+
+<!--
+| Method             |Time          | FPS         |Time          | FPS         |
+|--------------------|--------------|-------------|--------------|-------------|
+|                    |  X64         |X64          |  X64         |X64          |
+|                    |Single-thread |Single-thread|Multi-thread  |Multi-thread |
+|cnn (CPU, 640x480)  |  58.03ms     |  17.23      | 13.85ms      |   72.20     |
+|cnn (CPU, 320x240)  |  14.18ms     |  70.51      |  3.38ms      |  296.21     |
+|cnn (CPU, 160x120)  |   3.25ms     | 308.15      |  0.82ms      | 1226.56     |
+|cnn (CPU, 128x96)   |   2.11ms     | 474.38      |  0.52ms      | 1929.60     |
+-->
+| Method             |Time          | FPS         |Time          | FPS         |
+|--------------------|--------------|-------------|--------------|-------------|
+|                    |  X64         |X64          |  X64         |X64          |
+|                    |Single-thread |Single-thread|Multi-thread  |Multi-thread |
+|cnn (CPU, 640x480)  |  58.06ms.    |  17.22      |  12.93ms     |   77.34     |
+|cnn (CPU, 320x240)  |  13.77ms     |  72.60      |   3.19ms     |  313.14     |
+|cnn (CPU, 160x120)  |   3.26ms     | 306.81      |   0.77ms     | 1293.99     |
+|cnn (CPU, 128x96)   |   1.41ms     | 711.69      |   0.49ms     | 2027.74     |
+
+* Minimal face size ~10x10
+* Intel(R) Core(TM) i7-1065G7 CPU @ 1.3GHz
+
+
+## CNN-based Face Detection on ARM Linux (Raspberry Pi 4 B)
+
+| Method             |Time          | FPS         |Time          | FPS         |
+|--------------------|--------------|-------------|--------------|-------------|
+|                    |Single-thread |Single-thread|Multi-thread  |Multi-thread |
+|cnn (CPU, 640x480)  |  492.99ms    |  2.03       |  149.66ms    |   6.68      |
+|cnn (CPU, 320x240)  |  116.43ms    |  8.59       |   34.19ms    |  29.25      |
+|cnn (CPU, 160x120)  |   27.91ms    | 35.83       |    8.43ms    | 118.64      |
+|cnn (CPU, 128x96)   |   17.94ms    | 55.74       |    5.24ms    | 190.82      |
+
+<!-- * Face detection only, and no landmark detection included. -->
+* Minimal face size ~10x10
+* Raspberry Pi 4 B, Broadcom BCM2835, Cortex-A72 (ARMv8) 64-bit SoC @ 1.5GHz
+
+
+## Performance on WIDER Face 
+Run on default settings: scales=[1.], confidence_threshold=0.3, floating point:
+```
+AP_easy=0.834, AP_medium=0.824, AP_hard=0.708
+```
+
+## Author
 * Shiqi Yu, <shiqi.yu@gmail.com>
 
-Contributors
--------------
-* Jia Wu
-* Shengyin Wu
-* Dong Xu
+## Contributors
+All contributors who contribute at GitHub.com are listed [here](https://github.com/ShiqiYu/libfacedetection/graphs/contributors). 
 
--------------
-* The result image was taken by [Chloé Calmon](https://www.instagram.com/chloecalmon/).
+The contributors who were not listed at GitHub.com:
+* Jia Wu (吴佳)
+* Dong Xu (徐栋)
+* Shengyin Wu (伍圣寅)
+
+## Acknowledgment
+The work was partly supported by the Science Foundation of Shenzhen (Grant No. 20170504160426188).
+
+
+## Citation
+The loss used in [model training](https://github.com/ShiqiYu/libfacedetection.train) is EIoU, a novel extended IoU. More details can be found in:
+
+	@article{eiou,
+	 title={A Systematic IoU-Related Method: Beyond Simplified Regression for Better Localization},
+	 author={Hanyang Peng and Shiqi Yu},
+	 journal={IEEE Transactions on Image Processing},
+	 year={2021}
+	 }
+
+The paper can be downloaded at https://ieeexplore.ieee.org/document/9429909
